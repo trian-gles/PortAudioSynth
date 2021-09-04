@@ -1,17 +1,25 @@
 #include "portaudio.h"
 #include <iostream>
+#include <math.h>
 #define NUM_SECONDS   (4)
 #define SAMPLE_RATE   (48000)
+#define PI 3.14159265
 
 typedef struct
 {
-	float table[1000];
+	float table[2000];
 	int left_phase;
 	int right_phase;
+	int increment;
 }
 paTestData;
 
 float amp = 0.03f;
+
+int IncrementPhase(int currentPhase, int increment, int tabSize)
+{
+	return (currentPhase + increment) % tabSize;
+}
 
 static int patestCallback(const void *inputBuffer, void *outputBuffer,
 	unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo,
@@ -29,10 +37,8 @@ static int patestCallback(const void *inputBuffer, void *outputBuffer,
 
 		//increment the phase
 		size_t tabSize = sizeof(data->table) / sizeof(float);
-		data->left_phase += 1;
-		if (data->left_phase >= tabSize) { data->left_phase = 0; }
-		data->right_phase += 1;
-		if (data->right_phase >= tabSize) { data->right_phase = 0; }
+		data->left_phase = IncrementPhase(data->left_phase, data->increment, (int)tabSize);
+		data->right_phase = IncrementPhase(data->left_phase, data->increment, (int)tabSize);
 	}
 
 	return 0;
@@ -40,7 +46,6 @@ static int patestCallback(const void *inputBuffer, void *outputBuffer,
 
 void FillSaw(paTestData* data)
 {
-	
 	size_t tabSize = sizeof(data->table) / sizeof(float);
 	float inc = 2.0f / (float)tabSize;
 	for (size_t i = 0; i < tabSize; i++)
@@ -48,11 +53,21 @@ void FillSaw(paTestData* data)
 		data->table[i] = -1.0f + (inc * i);
 	}
 }
+
+void FillSine(paTestData* data)
+{
+	size_t tabSize = sizeof(data->table) / sizeof(float);
+	float inc = 2.0f * PI / (float)tabSize;
+	for (size_t i = 0; i < tabSize; i++)
+	{
+		data->table[i] = (float)sin(inc * i);
+	}
+}
 //***************************************
 
 int PrintError(PaError err)
 {
-	std::cout << "some error idk man";
+	std::cout << "ERROR";
 	return err;
 }
 
@@ -64,7 +79,8 @@ int main(void) {
 	printf("PortAudio Test: sawtooth \n");
 
 	data.left_phase = data.right_phase = 0;
-	FillSaw(&data);
+	data.increment = 8;
+	FillSine(&data);
 
 	err = Pa_Initialize();
 	printf("Initialization successful \n");
