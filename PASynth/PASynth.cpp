@@ -1,6 +1,7 @@
 #include "portaudio.h"
 #include <iostream>
 #include <math.h>
+#include <cmath>
 #define NUM_SECONDS   (4)
 #define SAMPLE_RATE   (48000)
 #define PI 3.14159265
@@ -63,6 +64,33 @@ void FillSine(paTestData* data)
 		data->table[i] = (float)sin(inc * i);
 	}
 }
+
+void FillSquare(paTestData* data)
+{
+	size_t tabSize = sizeof(data->table) / sizeof(float);
+	int halfway = (int)tabSize / 2;
+	for (size_t i = 0; i < tabSize; i++)
+	{
+		if (i < halfway)
+		{
+			data->table[i] = -1;
+		}
+		else {
+			data->table[i] = 1;
+		}
+	}
+}
+
+void FillRandom(paTestData* data)
+{
+	size_t tabSize = sizeof(data->table) / sizeof(float);
+	int halfway = (int)tabSize / 2;
+	for (size_t i = 0; i < tabSize; i++)
+	{
+		data->table[i] = (float)((rand() % 200000) - 100000) / 100000;
+		std::cout << data->table[i];
+	}
+}
 //***************************************
 
 int PrintError(PaError err)
@@ -80,7 +108,7 @@ int main(void) {
 
 	data.left_phase = data.right_phase = 0;
 	data.increment = 8;
-	FillSine(&data);
+	FillSaw(&data);
 
 	err = Pa_Initialize();
 	printf("Initialization successful \n");
