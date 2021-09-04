@@ -4,22 +4,28 @@
 #include <cmath>
 #define NUM_SECONDS   (4)
 #define SAMPLE_RATE   (48000)
-#define PI 3.14159265
+#define TABLE_LENGTH (2000)
+#define PI 3.14159265f
 
 typedef struct
 {
-	float table[2000];
-	int left_phase;
-	int right_phase;
-	int increment;
+	float table[TABLE_LENGTH];
+	float left_phase;
+	float right_phase;
+	float increment;
 }
 paTestData;
 
 float amp = 0.03f;
 
-int IncrementPhase(int currentPhase, int increment, int tabSize)
+float IncrementPhase(float currentPhase, float increment, float tabSize)
 {
-	return (currentPhase + increment) % tabSize;
+	float desiredPhase = currentPhase + increment;
+	while (desiredPhase > tabSize)
+	{
+		desiredPhase -= tabSize;
+	}
+	return desiredPhase;
 }
 
 static int patestCallback(const void *inputBuffer, void *outputBuffer,
@@ -33,13 +39,13 @@ static int patestCallback(const void *inputBuffer, void *outputBuffer,
 	(void)inputBuffer; // not using this but don't want an error
 
 	for (i = 0; i < framesPerBuffer; i++) {
-		*out++ = data->table[data->left_phase] * amp;  /* left */
-		*out++ = data->table[data->right_phase] * amp;  /* right */
+		*out++ = data->table[(int) round(data->left_phase)] * amp;  /* left */
+		*out++ = data->table[(int) round(data->right_phase)] * amp;  /* right */
 
 		//increment the phase
 		size_t tabSize = sizeof(data->table) / sizeof(float);
-		data->left_phase = IncrementPhase(data->left_phase, data->increment, (int)tabSize);
-		data->right_phase = IncrementPhase(data->left_phase, data->increment, (int)tabSize);
+		data->left_phase = IncrementPhase(data->left_phase, data->increment, (float) tabSize);
+		data->right_phase = IncrementPhase(data->left_phase, data->increment, (float) tabSize);
 	}
 
 	return 0;
@@ -58,7 +64,7 @@ void FillSaw(paTestData* data)
 void FillSine(paTestData* data)
 {
 	size_t tabSize = sizeof(data->table) / sizeof(float);
-	float inc = 2.0f * PI / (float)tabSize;
+	float inc =(float) 2.0f * PI / (float)tabSize;
 	for (size_t i = 0; i < tabSize; i++)
 	{
 		data->table[i] = (float)sin(inc * i);
@@ -69,7 +75,7 @@ void FillSquare(paTestData* data)
 {
 	size_t tabSize = sizeof(data->table) / sizeof(float);
 	int halfway = (int)tabSize / 2;
-	for (size_t i = 0; i < tabSize; i++)
+	for (int i = 0; i < (int) tabSize; i++)
 	{
 		if (i < halfway)
 		{
@@ -103,12 +109,16 @@ static paTestData data;
 int main(void) {
 	PaStream* stream;
 	PaError err;
-
+	int freq;
 	printf("PortAudio Test: sawtooth \n");
+	std::cout << "Enter frequency: ";
+	std::cin >> freq;
+	std::cout << "\n";
+
 
 	data.left_phase = data.right_phase = 0;
-	data.increment = 8;
-	FillSaw(&data);
+	data.increment = (float) TABLE_LENGTH * freq / SAMPLE_RATE;
+	FillSine(&data);
 
 	err = Pa_Initialize();
 	printf("Initialization successful \n");
