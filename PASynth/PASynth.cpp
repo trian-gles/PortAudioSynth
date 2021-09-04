@@ -5,10 +5,13 @@
 
 typedef struct
 {
-	float left_phase;
-	float right_phase;
+	float table[1000];
+	int left_phase;
+	int right_phase;
 }
 paTestData;
+
+float amp = 0.03f;
 
 static int patestCallback(const void *inputBuffer, void *outputBuffer,
 	unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo* timeInfo,
@@ -21,17 +24,29 @@ static int patestCallback(const void *inputBuffer, void *outputBuffer,
 	(void)inputBuffer; // not using this but don't want an error
 
 	for (i = 0; i < framesPerBuffer; i++) {
-		*out++ = data->left_phase;  /* left */
-		*out++ = data->right_phase;  /* right */
+		*out++ = data->table[data->left_phase] * amp;  /* left */
+		*out++ = data->table[data->right_phase] * amp;  /* right */
 
-		//simple sawtooth phaser
-		data->left_phase += 0.01f;
-		if (data->left_phase >= 1.0f) { data->left_phase -= 2.0f; }
-		data->right_phase += 0.01f;
-		if (data->right_phase >= 1.0f) { data->right_phase -= 2.0f; }
+		//increment the phase
+		size_t tabSize = sizeof(data->table) / sizeof(float);
+		data->left_phase += 1;
+		if (data->left_phase >= tabSize) { data->left_phase = 0; }
+		data->right_phase += 1;
+		if (data->right_phase >= tabSize) { data->right_phase = 0; }
 	}
 
 	return 0;
+}
+
+void FillSaw(paTestData* data)
+{
+	
+	size_t tabSize = sizeof(data->table) / sizeof(float);
+	float inc = 2.0f / (float)tabSize;
+	for (size_t i = 0; i < tabSize; i++)
+	{
+		data->table[i] = -1.0f + (inc * i);
+	}
 }
 //***************************************
 
@@ -49,6 +64,8 @@ int main(void) {
 	printf("PortAudio Test: sawtooth \n");
 
 	data.left_phase = data.right_phase = 0;
+	FillSaw(&data);
+
 	err = Pa_Initialize();
 	printf("Initialization successful \n");
 	if (err != paNoError) {
