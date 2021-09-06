@@ -3,7 +3,7 @@
 #include <math.h>
 #include <cmath>
 #include <vector>
-#define NUM_SECONDS   (20)
+#define NUM_SECONDS   (4)
 #define SAMPLE_RATE   (48000)
 #define PI 3.14159265f
 
@@ -16,7 +16,7 @@ public:
 	}
 };
 
-class Sig: BaseSound
+class Sig : BaseSound
 {
 	float amp;
 public:
@@ -25,38 +25,45 @@ public:
 		amp = initAmp;
 	}
 
-	float GetSample()
+	float GetSample() override
 	{
 		return amp;
 	}
 };
 
-class BaseSynth : BaseSound // class to be inherited
+class BaseSynth : public BaseSound // class to be inherited
 {
 protected:
 	std::vector<float>* table = new std::vector<float>();
 private:
-	
+
 	float phase = 0;
-	float increment;
-	bool mulInp = false;
-	bool freqInp = false;
+	float add = 0;
+	BaseSound *mulInp;
+	BaseSound *freqInp;
 
 	void AdvancePhase()
 	{
-		phase += increment;
-		while (phase >= (float) table->size() - 1)
+		phase += GetIncrement();
+		while (phase >= (float)table->size() - 1)
 		{
-			
+
 			phase -= (float)table->size() - 1;
-			
+
 		}
 	}
 
-public:
-	void FixedInit(float freq, float mul, int tabSize)
+	float GetIncrement()
 	{
-		increment = tabSize * freq / SAMPLE_RATE;
+		return table->size() * freqInp->GetSample() / SAMPLE_RATE;
+	}
+
+public: 
+	void Init(BaseSound *freq, BaseSound *mul, float add)
+	{
+		mulInp = mul;
+		freqInp = freq;
+		this->add = add;
 	}
 
 	float GetSample() override
@@ -64,140 +71,91 @@ public:
 		int intPhase = (int)round(phase);
 		float samp = (*table)[intPhase];
 		AdvancePhase();
-		return samp;
+		return samp * mulInp->GetSample() + add;
 	}
 };
 
-class Saw : BaseSynth
+class Saw : public BaseSynth
 {
-public:
-	Saw(float freq, float mul, int tabSize)
+private:
+	void BuildTable(int tabSize)
 	{
-		FixedInit(freq, mul, tabSize);
 		float inc = 2.0f / tabSize;
 		for (int i = 0; i < tabSize; i++)
 		{
-			(*table).push_back(inc * i - 2.0f);
+			(*table).push_back((inc * i - 1.0f));
 		}
-		
 	}
+
+public:
+	Saw(BaseSound *freq, BaseSound* mul, int tabSize, float add)
+	{
+		Init(freq, mul, add);
+		BuildTable(tabSize);
+	}
+
+	Saw(float freq, BaseSound* mul, int tabSize, float add)
+	{
+		Init((BaseSound*)new Sig(freq), mul, add);
+		BuildTable(tabSize);
+	}
+
+	Saw(BaseSound* freq, float mul, int tabSize, float add)
+	{
+		Init(freq, (BaseSound*)new Sig(mul), add);
+		BuildTable(tabSize);
+	}
+
+	Saw(float freq, float mul, int tabSize, float add)
+	{
+		Init((BaseSound*)new Sig(freq), (BaseSound*)new Sig(mul), add);
+		BuildTable(tabSize);
+	}
+
 };
 
-class Sine : BaseSynth
+class Sine : public BaseSynth
 {
-public:
-	Sine(float freq, float mul, int tabSize)
+private:
+	void BuildTable(int tabSize)
 	{
-		FixedInit(freq, mul, tabSize);
 		float inc = PI * 2 / tabSize;
 		for (int i = 0; i < tabSize; i++)
 		{
 			(*table).push_back(sin(inc * i));
 		}
-
-	}
-};
-
-class Dua : BaseSound
-{
-private:
-
-	std::vector<std::vector<float>*>* tables = new std::vector<std::vector<float>*>();
-	std::vector<float> *increments = new std::vector<float>();
-	std::vector<float>* curTab;
-	std::vector<int>* maxCycles = new std::vector<int>();
-	float curInc;
-	float phase = 0;
-
-	int cycles = 0;
-	int curIndex = 0;
-	int curMaxCycle;
-
-	bool mulInp = false;
-	bool freqInp = false;
-
-	void CheckPhase()
-	{
-		if (cycles > curMaxCycle)
-		{
-			NextTable();
-		}
-		while (phase >= (float)curTab->size() - 1)
-		{
-
-			phase -= (float)curTab->size() - 1;
-			cycles++;
-		}
-	}
-
-	void AdvancePhase()
-	{
-		phase += curInc;
-	}
-
-	void NextTable()
-	{
-		if (curIndex == tables->size())
-		{
-			return;
-		}
-		curMaxCycle = (*maxCycles)[curIndex];
-		curTab = (*tables)[curIndex];
-		curInc = (*increments)[curIndex];
-		curIndex += 1;
 	}
 
 public:
-	Dua(float freq, float mul, int size)
+	Sine(BaseSound* freq, BaseSound* mul, int tabSize, float add)
 	{
-		for (int i = 0; i < size; i++)
-		{
-			int tabSize = 3 + size - i;
-			float increment = tabSize * freq / SAMPLE_RATE;
-			increments->push_back(increment);
-
-			std::vector<float>* table = new std::vector<float>();
-			float inc = PI * 2 / tabSize;
-			for (int i = 0; i < tabSize; i++)
-			{
-				(*table).push_back(sin(inc * i));
-			}
-			tables->push_back(table);
-
-			int maxCyc = (int) round(20000 / tabSize);
-			maxCycles->push_back(maxCyc);
-		}
-		//build an empty table
-		std::vector<float>* empty = new std::vector<float>();
-		empty->push_back(0);
-		empty->push_back(0);
-		tables->push_back(empty);
-		increments->push_back(0.5);
-		maxCycles->push_back(1000);
-
-		NextTable();
-		std::cout << "Dua built \n";
-		std::cout << "tables: \n";
-		for (int i = 0; i < (int)tables->size(); i++)
-		{
-			std::cout << (*tables)[i]->size() << "\n";
-		}
+		Init(freq, mul, add);
+		BuildTable(tabSize);
 	}
 
-	float GetSample() override 
+	Sine(float freq, BaseSound* mul, int tabSize, float add)
 	{
-		CheckPhase();
-		int intPhase = (int)round(phase);
-		float samp = (*curTab)[intPhase];
-		AdvancePhase();
-		return samp;
+		Init((BaseSound*)new Sig(freq), mul, add);
+		BuildTable(tabSize);
+	}
+
+	Sine(BaseSound* freq, float mul, int tabSize, float add)
+	{
+		Init(freq, (BaseSound*)new Sig(mul), add);
+		BuildTable(tabSize);
+	}
+
+	Sine(float freq, float mul, int tabSize, float add)
+	{
+		Init((BaseSound*)new Sig(freq), (BaseSound*)new Sig(mul), add);
+		BuildTable(tabSize);
 	}
 };
 
-class PaWrapper 
+class PaWrapper
 {
 private:
-	BaseSynth *outputSynth;
+	BaseSynth* outputSynth;
 	PaStream* stream;
 
 	int paCallbackMethod(const void* inputBuffer, void* outputBuffer,
@@ -278,7 +236,7 @@ public:
 		Pa_Terminate();
 	}
 
-	void SetSynth(BaseSynth *synth)
+	void SetSynth(BaseSynth* synth)
 	{
 		outputSynth = synth;
 	}
@@ -287,13 +245,23 @@ public:
 
 };
 
+void PrintSamples(BaseSound* sound, int num)
+{
+	std::cout << "printing samples: \n";
+	for (int i = 0; i < num; i++)
+	{
+		std::cout << sound->GetSample() << "\n";
+	}
+}
+
 int main(void)
 {
 	PaError err;
-	std::vector<Sine*> *synths = new std::vector<Sine*>();
-	Dua* dua = new Dua(140, 0.05f, 200);
-	PaWrapper *pa = new PaWrapper((BaseSynth*) dua);
-
+	std::vector<Sine*>* synths = new std::vector<Sine*>();
+	Sine* freq = new Sine(119, 200, 3, 420.0f);
+	PrintSamples(freq, 100);
+	Sine* dua = new Sine(freq, 0.2f, 2000, 0);
+	PaWrapper* pa = new PaWrapper((BaseSynth*)dua);
 
 	err = pa->Init();
 	if (err != paNoError)
@@ -310,7 +278,7 @@ int main(void)
 	{
 		return err;
 	}
-	
+
 	err = pa->CloseStream();
 	if (err != paNoError)
 	{
