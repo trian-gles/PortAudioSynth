@@ -20,8 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ModSynthCpp.cpp" />
-    <ClCompile Include="PASynthC.cpp" />
-    <ClCompile Include="PASynthCpp.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

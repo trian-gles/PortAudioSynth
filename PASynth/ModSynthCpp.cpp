@@ -7,7 +7,7 @@
 #define SAMPLE_RATE   (48000)
 #define PI 3.14159265f
 
-class BaseSound // class to be inherited
+class BaseSound // class to be inherited of any sound that connects a voltage
 {
 public:
 	virtual float GetSample()
@@ -16,7 +16,79 @@ public:
 	}
 };
 
-class Sig : BaseSound
+class BaseSimpleFilter : public BaseSound
+{
+protected:
+	float lastInput = 0;
+	BaseSound *inputSig;
+};
+
+class SimpleLP : public BaseSimpleFilter 
+{
+public:
+	SimpleLP(BaseSound* input) 
+	{
+		this->inputSig = input;
+	}
+
+	float GetSample() override 
+	{
+		float curInp = (inputSig->GetSample() * 0.5f) + lastInput * 0.5f;
+		lastInput = curInp; // store the current input for the next sample frame
+		return curInp;
+	}
+};
+
+class SimpleHP : public BaseSimpleFilter
+{
+public:
+	SimpleHP(BaseSound* input)
+	{
+		this->inputSig = input;
+	}
+
+	float GetSample() override
+	{
+		float curInp = (inputSig->GetSample() * 0.5f) - lastInput * 0.5f;
+		lastInput = curInp; // store the current input for the next sample frame
+		return curInp;
+	}
+};
+
+class SimpleFir : public BaseSimpleFilter
+{
+private:
+	std::vector<float>* pastInputs = new std::vector<float>();
+	std::vector<float>* coefs;
+	int order;
+
+public:
+	SimpleFir(BaseSound* input, int order, std::vector<float>* coefs) 
+	{
+		this->coefs = coefs;
+		inputSig = input;
+		this->order = order;
+		for (int i = 0; i < order; i++) 
+		{
+			pastInputs->push_back(0);
+		}
+	}
+
+	float GetSample() override 
+	{
+		float newSig = inputSig->GetSample() * (*coefs)[0];
+		for (int i = 0; i < order; i++)
+		{
+			newSig += (*pastInputs)[i] * (*coefs)[i + 1]; // coefficients
+		}
+		pastInputs->insert(pastInputs->begin(), newSig);
+
+		pastInputs->pop_back();
+		return newSig;
+	}
+};
+
+class Sig : BaseSound // constant float voltage
 {
 	float amp;
 public:
@@ -29,6 +101,16 @@ public:
 	{
 		return amp;
 	}
+};
+
+class Noise : BaseSound // needs added parameter for mul and maybe table size? 
+{
+public:
+	float GetSample() override
+	{
+		return 1 - ((rand() % 200) / 100);
+	}
+
 };
 
 class BaseSynth : public BaseSound // class to be inherited
@@ -257,11 +339,15 @@ void PrintSamples(BaseSound* sound, int num)
 int main(void)
 {
 	PaError err;
-	std::vector<Sine*>* synths = new std::vector<Sine*>();
-	Sine* freq = new Sine(119, 200, 3, 420.0f);
-	PrintSamples(freq, 100);
-	Sine* dua = new Sine(freq, 0.2f, 2000, 0);
-	PaWrapper* pa = new PaWrapper((BaseSynth*)dua);
+	//std::vector<Sine*>* synths = new std::vector<Sine*>();
+	//Sine* freq = new Sine(70, 100, 3, 490.0f);
+	//PrintSamples(freq, 100);
+	//Sine* dua = new Sine(freq, 0.2f, 2000, 0);
+
+	Noise *whiteNoise = new Noise();
+	SimpleFir* fir = new SimpleFir((BaseSound*)whiteNoise, 4, new std::vector<float>{ 0.1, 0.3, 0.4, 0.1, 0.1 });
+
+	PaWrapper* pa = new PaWrapper((BaseSynth*)fir);
 
 	err = pa->Init();
 	if (err != paNoError)
