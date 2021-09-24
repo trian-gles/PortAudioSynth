@@ -20,6 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ModSynthCpp.cpp" />
+    <ClCompile Include="AudioMath.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AudioMath.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
