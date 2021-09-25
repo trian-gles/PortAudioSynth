@@ -10,6 +10,44 @@ public:
 };
 
 
+class Grain : public BaseSound
+{
+private:
+	std::vector<float>* sourceWave;
+	int start;
+	int finish;
+	int index = 0;
+
+	bool playing;
+
+public:
+	Grain(std::vector<float>* sourceWave, int start, int finish);
+	float GetSample() override;
+	bool IsPlaying();
+	void UpdateParams(int newStart, int newFinish);
+	void Play();
+
+};
+
+
+class GranularSynth : public BaseSound 
+{
+private:
+	std::vector<float>* sourceWave;
+	int start;
+	int finish;
+	int density;
+	int index = 0;
+	std::vector<Grain*>* grains;
+
+public:
+	GranularSynth(std::vector<float>* sourceWave, int start, int finish, int density);
+	void UpdateParams(int start, int finish, int density);
+	float GetSample() override;
+
+};
+
+
 class BaseSimpleFilter : public BaseSound
 {
 protected:

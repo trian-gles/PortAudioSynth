@@ -11,6 +11,94 @@ float BaseSound::GetSample()
 	}
 
 
+Grain::Grain(std::vector<float>* sourceWave, int start, int finish)
+{
+	this->start = start;
+	this->finish = finish;
+	this->sourceWave = sourceWave;
+	playing = true;
+}
+
+float Grain::GetSample() 
+{
+	float returnGrain = (*sourceWave)[index];
+	index++;
+	if (index == finish) 
+	{
+		index = start;
+		playing = false;
+	}
+	return returnGrain;
+}
+
+void Grain::UpdateParams(int newStart, int newFinish)
+{
+	start = newStart;
+	finish = newFinish;
+}
+
+bool Grain::IsPlaying()
+{
+	return playing;
+}
+
+void Grain::Play()
+{
+	playing = true;
+}
+
+GranularSynth::GranularSynth(std::vector<float>* sourceWave, int start, int finish, int density)
+{
+	this->sourceWave = sourceWave;
+	this->start = start;
+	this->finish = finish;
+	this->density = density;
+	grains->push_back(new Grain(sourceWave, start, finish));
+}
+
+float GranularSynth::GetSample() 
+{
+	if (index == density)
+	{
+		index = 0;
+		bool foundNotPlayingGrain = false;
+		for (size_t i = 0; i < grains->size(); i++)
+		{
+			if (!(*grains)[i]->IsPlaying())
+			{
+				(*grains)[i]->Play();
+				(*grains)[i]->UpdateParams(start, finish); // will this unnecessary call slow me down?
+				foundNotPlayingGrain = true;
+				break;
+			}
+		}
+		if (!foundNotPlayingGrain)
+		{
+			Grain* newGrain = new Grain(sourceWave, start, finish); // can I do this mid audio loop?
+			grains->push_back(newGrain);
+			newGrain->Play();
+		}
+	}
+
+	float fullOutput = 0;
+
+	for (size_t i = 0; i < grains->size(); i++) 
+	{
+		if ((*grains)[i]->IsPlaying())
+		{
+			fullOutput += (*grains)[i]->GetSample();
+		}
+		// should I clean up unneeded grains here?
+	}
+}
+
+void GranularSynth::UpdateParams(int newStart, int newFinish, int density)
+{
+	start = newStart;
+	finish = newFinish;
+	this->density = density;
+}
+
 SimpleLP::SimpleLP(BaseSound* input)
 	{
 		this->inputSig = input;
