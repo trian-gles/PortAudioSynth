@@ -1,13 +1,15 @@
 #include "portaudio.h"
 #include <iostream>
 #include "AudioMath.h"
+#include "WavFile.h"
+#include <string>
 #define SAMPLE_RATE   (48000)
 #define NUM_SECONDS   (4)
 
 class PaWrapper
 {
 private:
-	BaseSynth* outputSynth;
+	BaseSound* outputSound;
 	PaStream* stream;
 
 	int paCallbackMethod(const void* inputBuffer, void* outputBuffer,
@@ -24,7 +26,7 @@ private:
 
 		for (i = 0; i < framesPerBuffer; i++)
 		{
-			float samp = outputSynth->GetSample();
+			float samp = outputSound->GetSample();
 			*out++ = samp;
 			*out++ = samp;
 		}
@@ -46,9 +48,9 @@ private:
 			statusFlags);
 	}
 public:
-	PaWrapper(BaseSynth* out)
+	PaWrapper(BaseSound* out)
 	{
-		outputSynth = out;
+		outputSound = out;
 	}
 
 	PaError Init()
@@ -88,9 +90,9 @@ public:
 		Pa_Terminate();
 	}
 
-	void SetSynth(BaseSynth* synth)
+	void SetSound(BaseSound* sound)
 	{
-		outputSynth = synth;
+		outputSound = sound;
 	}
 
 
@@ -108,16 +110,20 @@ void PrintSamples(BaseSound* sound, int num)
 
 int main(void)
 {
+	std::string filename = "C:/Users/bkier/source/repos/PASynth/demo.wav";
+
+	std::vector<float>* waveform = GetWaveform(filename);
+	WavePlayer* wp = new WavePlayer(waveform);
 	PaError err;
-	std::vector<Sine*>* synths = new std::vector<Sine*>();
+	/*std::vector<Sine*>* synths = new std::vector<Sine*>();
 	Sine* freq = new Sine(70, 100, 3, 490.0f);
 	PrintSamples(freq, 100);
-	Sine* dua = new Sine(freq, 0.2f, 2000, 0);
+	Sine* dua = new Sine(freq, 0.2f, 2000, 0);*/
 
 	//Noise *whiteNoise = new Noise();
 	//SimpleFir* fir = new SimpleFir((BaseSound*)whiteNoise, 4, new std::vector<float>{ 0.1, 0.3, 0.4, 0.1, 0.1 });
 
-	PaWrapper* pa = new PaWrapper((BaseSynth*)dua);
+	PaWrapper* pa = new PaWrapper((BaseSound*)wp);
 
 	err = pa->Init();
 	if (err != paNoError)
