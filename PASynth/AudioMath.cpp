@@ -11,6 +11,23 @@ float BaseSound::GetSample()
 	}
 
 
+WavePlayer::WavePlayer(std::vector<float>* sourceWave)
+{
+	this->sourceWave = sourceWave;
+}
+
+float WavePlayer::GetSample()
+{
+	float newSamp = 0;
+	if ((size_t)index < sourceWave->size())
+	{
+		newSamp = (*sourceWave)[index];
+	}
+	index++;
+	return newSamp;
+}
+
+
 Grain::Grain(std::vector<float>* sourceWave, int start, int finish)
 {
 	this->start = start;
@@ -90,6 +107,8 @@ float GranularSynth::GetSample()
 		}
 		// should I clean up unneeded grains here?
 	}
+
+	return fullOutput;
 }
 
 void GranularSynth::UpdateParams(int newStart, int newFinish, int density)

@@ -10,6 +10,18 @@ public:
 };
 
 
+class WavePlayer : public BaseSound
+{
+private:
+	std::vector<float>* sourceWave;
+	int index = 0;
+
+public:
+	WavePlayer(std::vector<float>* sourceWave);
+	float GetSample() override;
+};
+
+
 class Grain : public BaseSound
 {
 private:
