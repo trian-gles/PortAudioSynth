@@ -2,6 +2,7 @@
 #include <cmath>
 #include <vector>
 #include "AudioMath.h"
+#include <iostream>
 #define SAMPLE_RATE   (48000)
 #define PI 3.14159265f
 
@@ -32,6 +33,7 @@ Grain::Grain(std::vector<float>* sourceWave, int start, int finish)
 {
 	this->start = start;
 	this->finish = finish;
+	this->index = start;
 	this->sourceWave = sourceWave;
 	playing = true;
 }
@@ -44,6 +46,7 @@ float Grain::GetSample()
 	{
 		index = start;
 		playing = false;
+		//std::cout << "Grain reached end of length" << std::endl;
 	}
 	return returnGrain;
 }
@@ -77,6 +80,7 @@ float GranularSynth::GetSample()
 {
 	if (index == density)
 	{
+		//std::cout << "Need to start a grain" << std::endl;
 		index = 0;
 		bool foundNotPlayingGrain = false;
 		for (size_t i = 0; i < grains->size(); i++)
@@ -86,11 +90,13 @@ float GranularSynth::GetSample()
 				(*grains)[i]->Play();
 				(*grains)[i]->UpdateParams(start, finish); // will this unnecessary call slow me down?
 				foundNotPlayingGrain = true;
+				//std::cout << "Starting up stopped grain" << std::endl;
 				break;
 			}
 		}
 		if (!foundNotPlayingGrain)
 		{
+			//std::cout << "Making new grain" << std::endl;
 			Grain* newGrain = new Grain(sourceWave, start, finish); // can I do this mid audio loop?
 			grains->push_back(newGrain);
 			newGrain->Play();
@@ -108,6 +114,7 @@ float GranularSynth::GetSample()
 		// should I clean up unneeded grains here?
 	}
 
+	index++;
 	return fullOutput;
 }
 

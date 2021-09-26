@@ -50,7 +50,7 @@ private:
 	int finish;
 	int density;
 	int index = 0;
-	std::vector<Grain*>* grains;
+	std::vector<Grain*>* grains = new std::vector<Grain*>();
 
 public:
 	GranularSynth(std::vector<float>* sourceWave, int start, int finish, int density);

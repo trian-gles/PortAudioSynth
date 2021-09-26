@@ -113,7 +113,7 @@ int main(void)
 	std::string filename = "C:/Users/bkier/source/repos/PASynth/demo.wav";
 
 	std::vector<float>* waveform = GetWaveform(filename);
-	WavePlayer* wp = new WavePlayer(waveform);
+	GranularSynth *granSynth = new GranularSynth(waveform, 97167, 140000, 2010);
 	PaError err;
 	/*std::vector<Sine*>* synths = new std::vector<Sine*>();
 	Sine* freq = new Sine(70, 100, 3, 490.0f);
@@ -123,7 +123,8 @@ int main(void)
 	//Noise *whiteNoise = new Noise();
 	//SimpleFir* fir = new SimpleFir((BaseSound*)whiteNoise, 4, new std::vector<float>{ 0.1, 0.3, 0.4, 0.1, 0.1 });
 
-	PaWrapper* pa = new PaWrapper((BaseSound*)wp);
+	WavePlayer* wf = new WavePlayer(waveform);
+	PaWrapper* pa = new PaWrapper((BaseSound*)granSynth);
 
 	err = pa->Init();
 	if (err != paNoError)
