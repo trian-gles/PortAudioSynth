@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-
+typedef std::vector<float> waveTable;
 
 class BaseSound // class to be inherited of any sound that connects a voltage
 {
@@ -13,27 +13,30 @@ public:
 class WavePlayer : public BaseSound
 {
 private:
-	std::vector<float>* sourceWave;
+	waveTable* sourceWave;
 	int index = 0;
-
 public:
-	WavePlayer(std::vector<float>* sourceWave);
+	WavePlayer(waveTable* sourceWave);
 	float GetSample() override;
 };
 
+waveTable* MakeHannTable(int samples);
+
+waveTable* MakeLineTable(float start, float finish, int length);
 
 class Grain : public BaseSound
 {
 private:
-	std::vector<float>* sourceWave;
+	waveTable* sourceWave;
+	waveTable* window;
 	int start;
 	int finish;
-	int index = 0;
-
+	int index; // index for the soundfile
+	int length;
 	bool playing;
 
 public:
-	Grain(std::vector<float>* sourceWave, int start, int finish);
+	Grain(waveTable* sourceWave, int start, int finish, waveTable* window);
 	float GetSample() override;
 	bool IsPlaying();
 	void UpdateParams(int newStart, int newFinish);
@@ -45,7 +48,8 @@ public:
 class GranularSynth : public BaseSound 
 {
 private:
-	std::vector<float>* sourceWave;
+	waveTable* sourceWave;
+	waveTable* window;
 	int start;
 	int finish;
 	int density;
@@ -53,7 +57,7 @@ private:
 	std::vector<Grain*>* grains = new std::vector<Grain*>();
 
 public:
-	GranularSynth(std::vector<float>* sourceWave, int start, int finish, int density);
+	GranularSynth(waveTable* sourceWave, int start, int finish, int density, waveTable* window);
 	void UpdateParams(int start, int finish, int density);
 	float GetSample() override;
 
@@ -89,12 +93,12 @@ public:
 class SimpleFir : public BaseSimpleFilter
 {
 private:
-	std::vector<float>* pastInputs = new std::vector<float>();
-	std::vector<float>* coefs;
+	waveTable* pastInputs = new waveTable();
+	waveTable* coefs;
 	int order;
 
 public:
-	SimpleFir(BaseSound* input, int order, std::vector<float>* coefs);
+	SimpleFir(BaseSound* input, int order, waveTable* coefs);
 
 	float GetSample() override;
 };
@@ -121,7 +125,7 @@ public:
 class BaseSynth : public BaseSound // class to be inherited
 {
 protected:
-	std::vector<float>* table = new std::vector<float>();
+	waveTable* table = new waveTable();
 private:
 
 	float phase = 0;

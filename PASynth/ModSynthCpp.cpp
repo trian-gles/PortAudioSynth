@@ -113,7 +113,8 @@ int main(void)
 	std::string filename = "C:/Users/bkier/source/repos/PASynth/demo.wav";
 
 	std::vector<float>* waveform = GetWaveform(filename);
-	GranularSynth *granSynth = new GranularSynth(waveform, 97167, 140000, 2010);
+	waveTable* hann = MakeHannTable(3000);
+	GranularSynth *granSynth = new GranularSynth(waveform, 97167, 140000, 2010, hann);
 	PaError err;
 	/*std::vector<Sine*>* synths = new std::vector<Sine*>();
 	Sine* freq = new Sine(70, 100, 3, 490.0f);

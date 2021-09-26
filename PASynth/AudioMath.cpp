@@ -11,6 +11,29 @@ float BaseSound::GetSample()
 		return 0.0f;
 	}
 
+waveTable* MakeHannTable(int samples)
+{
+	waveTable* wf = new waveTable();
+	for (int i = 0; i < samples; i++)
+	{
+		float samp = 0.5 - 0.5 * cos(2 * PI * i / samples);
+		wf->push_back(samp);
+	}
+	return wf;
+}
+
+waveTable* MakeLineTable(float start, float finish, int length)\
+{
+	waveTable* wf = new waveTable();
+	float step = (start - finish) / length;
+	for (int i = 0; i < length; i++)
+	{
+		wf->push_back(step* i + start);
+	}
+
+	return wf;
+}
+
 
 WavePlayer::WavePlayer(std::vector<float>* sourceWave)
 {
@@ -29,18 +52,24 @@ float WavePlayer::GetSample()
 }
 
 
-Grain::Grain(std::vector<float>* sourceWave, int start, int finish)
+Grain::Grain(std::vector<float>* sourceWave, int start, int finish, waveTable* window)
 {
 	this->start = start;
 	this->finish = finish;
+	this->length = finish - start;
 	this->index = start;
 	this->sourceWave = sourceWave;
+	this->window = window;
 	playing = true;
 }
 
 float Grain::GetSample() 
 {
 	float returnGrain = (*sourceWave)[index];
+	int absIndex = index - start;
+	int windowIndex = (int)round(absIndex * window->size() / length);
+	float windowSamp = (*window)[windowIndex];
+	returnGrain *= windowSamp;
 	index++;
 	if (index == finish) 
 	{
@@ -55,6 +84,7 @@ void Grain::UpdateParams(int newStart, int newFinish)
 {
 	start = newStart;
 	finish = newFinish;
+	length = newFinish - newStart;
 }
 
 bool Grain::IsPlaying()
@@ -67,13 +97,14 @@ void Grain::Play()
 	playing = true;
 }
 
-GranularSynth::GranularSynth(std::vector<float>* sourceWave, int start, int finish, int density)
+GranularSynth::GranularSynth(std::vector<float>* sourceWave, int start, int finish, int density, waveTable* window)
 {
 	this->sourceWave = sourceWave;
+	this->window = window;
 	this->start = start;
 	this->finish = finish;
 	this->density = density;
-	grains->push_back(new Grain(sourceWave, start, finish));
+	grains->push_back(new Grain(sourceWave, start, finish, window));
 }
 
 float GranularSynth::GetSample() 
@@ -97,7 +128,7 @@ float GranularSynth::GetSample()
 		if (!foundNotPlayingGrain)
 		{
 			//std::cout << "Making new grain" << std::endl;
-			Grain* newGrain = new Grain(sourceWave, start, finish); // can I do this mid audio loop?
+			Grain* newGrain = new Grain(sourceWave, start, finish, this->window); // can I do this mid audio loop?
 			grains->push_back(newGrain);
 			newGrain->Play();
 		}
