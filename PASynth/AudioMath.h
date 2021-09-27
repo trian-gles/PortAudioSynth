@@ -22,7 +22,20 @@ public:
 
 waveTable* MakeHannTable(int samples);
 
+waveTable* MakeSineTable(int length);
+
+waveTable* MakeSawTable(int length);
+
+waveTable* MakeNoiseTable(int length);
+
 waveTable* MakeLineTable(float start, float finish, int length);
+
+void MulTable(waveTable* tab, float mul);
+
+void AddTable(waveTable* tab, float add);
+
+void ReverseTable(waveTable* tab);
+
 
 class Grain : public BaseSound
 {

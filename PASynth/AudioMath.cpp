@@ -22,7 +22,7 @@ waveTable* MakeHannTable(int samples)
 	return wf;
 }
 
-waveTable* MakeLineTable(float start, float finish, int length)\
+waveTable* MakeLineTable(float start, float finish, int length)
 {
 	waveTable* wf = new waveTable();
 	float step = (start - finish) / length;
@@ -32,6 +32,64 @@ waveTable* MakeLineTable(float start, float finish, int length)\
 	}
 
 	return wf;
+}
+
+waveTable* MakeSineTable(int length)
+{
+	waveTable* wf = new waveTable();
+	{
+		float inc = PI * 2 / length;
+		for (int i = 0; i < length; i++)
+		{
+			wf->push_back(sin(inc * i));
+		}
+	}
+	return wf;
+}
+
+waveTable* MakeSawTable(int length)
+{
+	waveTable* wf = new waveTable();
+	float inc = 2.0f / length;
+	for (int i = 0; i < length; i++)
+	{
+		wf->push_back((inc * i - 1.0f));
+	}
+	return wf;
+}
+
+waveTable* MakeNoiseTable(int length)
+{
+	waveTable* wf = new waveTable();
+	for (int i = 0; i < length; i++)
+	{
+		
+		wf->push_back(1 - ((rand() % 200) / 100));
+	}
+	return wf;
+}
+
+void MulTable(waveTable* tab, float mul)
+{
+	for (int i = 0; i < tab->size(); i++)
+	{
+
+		(*tab)[i] *= mul;
+	}
+}
+
+void AddTable(waveTable* tab, float add)
+{
+	for (int i = 0; i < tab->size(); i++)
+	{
+
+		(*tab)[i] += add;
+	}
+}
+
+void ReverseTable(waveTable* tab)
+{
+	std::reverse(tab->begin(), tab->end());
 }
 
 
