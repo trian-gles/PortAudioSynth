@@ -11,6 +11,12 @@ float BaseSound::GetSample()
 		return 0.0f;
 	}
 
+
+
+/*
+TABLES
+*/
+
 waveTable* MakeHannTable(int samples)
 {
 	waveTable* wf = new waveTable();
@@ -25,7 +31,7 @@ waveTable* MakeHannTable(int samples)
 waveTable* MakeLineTable(float start, float finish, int length)
 {
 	waveTable* wf = new waveTable();
-	float step = (start - finish) / length;
+	float step = (finish - start) / length;
 	for (int i = 0; i < length; i++)
 	{
 		wf->push_back(step* i + start);
@@ -93,7 +99,7 @@ void ReverseTable(waveTable* tab)
 }
 
 
-WavePlayer::WavePlayer(std::vector<float>* sourceWave)
+WavePlayer::WavePlayer(waveTable* sourceWave)
 {
 	this->sourceWave = sourceWave;
 }
@@ -101,14 +107,22 @@ WavePlayer::WavePlayer(std::vector<float>* sourceWave)
 float WavePlayer::GetSample()
 {
 	float newSamp = 0;
-	if ((size_t)index < sourceWave->size())
+	if (index >= (int)sourceWave->size())
 	{
-		newSamp = (*sourceWave)[index];
+		index = 0;
 	}
+	newSamp = (*sourceWave)[index];
 	index++;
 	return newSamp;
 }
 
+
+
+
+
+/*
+GRANULAR SYNTHESIS
+*/
 
 Grain::Grain(std::vector<float>* sourceWave, int start, int finish, waveTable* window)
 {
@@ -124,12 +138,13 @@ Grain::Grain(std::vector<float>* sourceWave, int start, int finish, waveTable* w
 float Grain::GetSample() 
 {
 	float returnGrain = (*sourceWave)[index];
+	this->finish;
 	int absIndex = index - start;
 	int windowIndex = (int)round(absIndex * window->size() / length);
 	float windowSamp = (*window)[windowIndex];
 	returnGrain *= windowSamp;
 	index++;
-	if (index == finish) 
+	if (index >= finish) 
 	{
 		index = start;
 		playing = false;
@@ -141,6 +156,7 @@ float Grain::GetSample()
 void Grain::UpdateParams(int newStart, int newFinish)
 {
 	start = newStart;
+	index = start;
 	finish = newFinish;
 	length = newFinish - newStart;
 }
@@ -167,7 +183,7 @@ GranularSynth::GranularSynth(std::vector<float>* sourceWave, int start, int fini
 
 float GranularSynth::GetSample() 
 {
-	if (index == density)
+	if (index >= density)
 	{
 		//std::cout << "Need to start a grain" << std::endl;
 		index = 0;
@@ -213,6 +229,35 @@ void GranularSynth::UpdateParams(int newStart, int newFinish, int density)
 	finish = newFinish;
 	this->density = density;
 }
+
+MovingGranularSynth::MovingGranularSynth(waveTable* sourceWave, BaseSound* startPlayer, BaseSound* lengthPlayer, BaseSound* densityPlayer, waveTable* window)
+{
+	this->sourceWave = sourceWave;
+	this->window = window;
+	this->startPlayer = startPlayer;
+	this->lengthPlayer = lengthPlayer;
+	this->densityPlayer = densityPlayer;
+
+
+	this->start = (int)startPlayer->GetSample();
+	this->finish = (int)lengthPlayer->GetSample() + this->start;
+	this->density = (int)densityPlayer->GetSample();
+	grains->push_back(new Grain(sourceWave, start, finish, window));
+}
+
+float MovingGranularSynth::GetSample()
+{
+	this->start = (int)startPlayer->GetSample();
+	this->finish = (int)lengthPlayer->GetSample() + this->start;
+	this->density = (int)densityPlayer->GetSample();
+	return GranularSynth::GetSample();
+}
+
+
+
+/*
+FILTERS
+*/
 
 SimpleLP::SimpleLP(BaseSound* input)
 	{
@@ -264,6 +309,12 @@ float SimpleFir::GetSample()
 		return newSig;
 	}
 
+
+
+
+/*
+SIGS AND SYNTHS
+*/
 
 Sig::Sig(float initAmp)
 	{

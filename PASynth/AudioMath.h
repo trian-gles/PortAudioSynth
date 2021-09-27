@@ -60,7 +60,7 @@ public:
 
 class GranularSynth : public BaseSound 
 {
-private:
+protected:
 	waveTable* sourceWave;
 	waveTable* window;
 	int start;
@@ -70,10 +70,23 @@ private:
 	std::vector<Grain*>* grains = new std::vector<Grain*>();
 
 public:
+	GranularSynth() = default;
 	GranularSynth(waveTable* sourceWave, int start, int finish, int density, waveTable* window);
 	void UpdateParams(int start, int finish, int density);
 	float GetSample() override;
 
+};
+
+class MovingGranularSynth : public GranularSynth
+{
+private:
+	BaseSound* startPlayer;
+	BaseSound* lengthPlayer;
+	BaseSound* densityPlayer;
+
+public:
+	MovingGranularSynth(waveTable* sourceWave, BaseSound* startPlayer, BaseSound* lengthPlayer, BaseSound* densityPlayer, waveTable* window);
+	float GetSample() override;
 };
 
 

@@ -4,7 +4,7 @@
 #include "WavFile.h"
 #include <string>
 #define SAMPLE_RATE   (48000)
-#define NUM_SECONDS   (4)
+#define NUM_SECONDS   (8)
 
 class PaWrapper
 {
@@ -113,8 +113,24 @@ int main(void)
 	std::string filename = "C:/Users/bkier/source/repos/PASynth/demo.wav";
 
 	std::vector<float>* waveform = GetWaveform(filename);
-	waveTable* hann = MakeHannTable(3000);
-	GranularSynth *granSynth = new GranularSynth(waveform, 97167, 140000, 2010, hann);
+	waveTable* hann = MakeHannTable(5000);
+
+
+	waveTable* startTab = MakeLineTable(850000, 1400000, 29100);
+	waveTable* lengthTab = MakeSineTable(9000);
+	MulTable(lengthTab, 2500);
+	AddTable(lengthTab, 3000);
+	
+
+	waveTable* densityTab = MakeLineTable(3000, 210, 70000);
+
+
+	WavePlayer* startPl = new WavePlayer(startTab);
+	WavePlayer* lengthPl = new WavePlayer(lengthTab);
+	Sig* densSig = new Sig(200);
+	WavePlayer* densPl = new WavePlayer(densityTab);
+
+	MovingGranularSynth *granSynth = new MovingGranularSynth(waveform, (BaseSound*)startPl, (BaseSound*)lengthPl, (BaseSound*)densSig, hann);
 	PaError err;
 	/*std::vector<Sine*>* synths = new std::vector<Sine*>();
 	Sine* freq = new Sine(70, 100, 3, 490.0f);
