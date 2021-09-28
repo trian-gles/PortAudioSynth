@@ -140,16 +140,28 @@ float Grain::GetSample()
 	float returnGrain = (*sourceWave)[index];
 	this->finish;
 	int absIndex = index - start;
-	int windowIndex = (int)round(absIndex * window->size() / length);
+ 	int windowIndex = (int)round(absIndex * window->size() / length);
 	float windowSamp = (*window)[windowIndex];
 	returnGrain *= windowSamp;
-	index++;
-	if (index >= finish) 
+	if (finish > start)
 	{
-		index = start;
-		playing = false;
-		//std::cout << "Grain reached end of length" << std::endl;
+		index++;
+		if (index >= finish)
+		{
+			index = start;
+			playing = false;
+		}
 	}
+	else if (start > finish)
+	{
+		index--;
+		if (index <= finish)
+		{
+			index = start;
+			playing = false;
+		}
+	}
+		
 	return returnGrain;
 }
 
@@ -185,6 +197,20 @@ float GranularSynth::GetSample()
 {
 	if (index >= density)
 	{
+		if (oscCtrl)
+		{
+			if (storedParams[0] > 0)
+			{
+				//std::cout << "received '/wek/inputs' message in GranularSynth with arguments: " << storedParams[0] << " " << storedParams[1] << " " << storedParams[2] << "\n";
+				int newStart = round(storedParams[0]);
+				int newFinish = start + round(storedParams[1]);
+				int newDens = round(storedParams[2]);
+
+				UpdateParams(newStart, newFinish, newDens);
+			}
+			
+		}
+
 		//std::cout << "Need to start a grain" << std::endl;
 		index = 0;
 		bool foundNotPlayingGrain = false;
@@ -202,6 +228,8 @@ float GranularSynth::GetSample()
 		if (!foundNotPlayingGrain)
 		{
 			//std::cout << "Making new grain" << std::endl;
+			
+
 			Grain* newGrain = new Grain(sourceWave, start, finish, this->window); // can I do this mid audio loop?
 			grains->push_back(newGrain);
 			newGrain->Play();
@@ -230,6 +258,12 @@ void GranularSynth::UpdateParams(int newStart, int newFinish, int density)
 	this->density = density;
 }
 
+void GranularSynth::AddExtCtrl(float* storedParams)
+{
+	oscCtrl = true;
+	this->storedParams = storedParams;
+}
+
 MovingGranularSynth::MovingGranularSynth(waveTable* sourceWave, BaseSound* startPlayer, BaseSound* lengthPlayer, BaseSound* densityPlayer, waveTable* window)
 {
 	this->sourceWave = sourceWave;
@@ -241,6 +275,11 @@ MovingGranularSynth::MovingGranularSynth(waveTable* sourceWave, BaseSound* start
 
 	this->start = (int)startPlayer->GetSample();
 	this->finish = (int)lengthPlayer->GetSample() + this->start;
+	if (this->finish == this->start)
+	{
+		this->finish++;
+	}
+
 	this->density = (int)densityPlayer->GetSample();
 	grains->push_back(new Grain(sourceWave, start, finish, window));
 }
@@ -249,9 +288,15 @@ float MovingGranularSynth::GetSample()
 {
 	this->start = (int)startPlayer->GetSample();
 	this->finish = (int)lengthPlayer->GetSample() + this->start;
+	if (this->finish == this->start)
+	{
+		this->finish++;
+	}
 	this->density = (int)densityPlayer->GetSample();
 	return GranularSynth::GetSample();
 }
+
+
 
 
 

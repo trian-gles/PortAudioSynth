@@ -19,13 +19,35 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ModSynthCpp.cpp" />
+    <ClCompile Include="ip\IpEndpointName.cpp" />
+    <ClCompile Include="ip\win32\NetworkingUtils.cpp" />
+    <ClCompile Include="ip\win32\UdpSocket.cpp" />
+    <ClCompile Include="Main.cpp" />
     <ClCompile Include="AudioMath.cpp" />
+    <ClCompile Include="osc\OscOutboundPacketStream.cpp" />
+    <ClCompile Include="osc\OscPrintReceivedElements.cpp" />
+    <ClCompile Include="osc\OscReceivedElements.cpp" />
+    <ClCompile Include="osc\OscTypes.cpp" />
     <ClCompile Include="WavFile.cpp" />
+    <ClCompile Include="osc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AudioMath.h" />
+    <ClInclude Include="ip\IpEndpointName.h" />
+    <ClInclude Include="ip\NetworkingUtils.h" />
+    <ClInclude Include="ip\PacketListener.h" />
+    <ClInclude Include="ip\TimerListener.h" />
+    <ClInclude Include="ip\UdpSocket.h" />
+    <ClInclude Include="osc\MessageMappingOscPacketListener.h" />
+    <ClInclude Include="osc\OscException.h" />
+    <ClInclude Include="osc\OscHostEndianness.h" />
+    <ClInclude Include="osc\OscOutboundPacketStream.h" />
+    <ClInclude Include="osc\OscPacketListener.h" />
+    <ClInclude Include="osc\OscPrintReceivedElements.h" />
+    <ClInclude Include="osc\OscReceivedElements.h" />
+    <ClInclude Include="osc\OscTypes.h" />
     <ClInclude Include="WavFile.h" />
+    <ClInclude Include="osc.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -97,7 +119,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Program Files\Mega-Nerd\libsndfile\include;C:\Users\bkier\Downloads\portaudio\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\bkier\OneDrive\Documents\cpp_libs\oscpack;C:\Program Files\Mega-Nerd\libsndfile\include;C:\Users\bkier\Downloads\portaudio\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -117,7 +139,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Program Files\Mega-Nerd\libsndfile\include;C:\Users\bkier\Downloads\portaudio\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\bkier\OneDrive\Documents\cpp_libs\oscpack;C:\Program Files\Mega-Nerd\libsndfile\include;C:\Users\bkier\Downloads\portaudio\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -137,13 +159,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Program Files\Mega-Nerd\libsndfile\include;C:\Users\bkier\Downloads\portaudio\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\bkier\OneDrive\Documents\cpp_libs\oscpack;C:\Program Files\Mega-Nerd\libsndfile\include;C:\Users\bkier\Downloads\portaudio\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Program Files (x86)\Mega-Nerd\libsndfile\lib;C:\Users\bkier\Downloads\portaudio\build\msvc\Win32\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>portaudio_x86.lib;libsndfile-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\Mega-Nerd\libsndfile\lib;C:\Users\bkier\Downloads\portaudio\build\msvc\Win32\Debug;C:\Users\bkier\OneDrive\Documents\cpp_libs\oscpack\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>portaudio_x86.lib;libsndfile-1.lib;oscpack.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -154,15 +176,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Program Files\Mega-Nerd\libsndfile\include;C:\Users\bkier\Downloads\portaudio\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\bkier\OneDrive\Documents\cpp_libs\oscpack;C:\Program Files\Mega-Nerd\libsndfile\include;C:\Users\bkier\Downloads\portaudio\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Program Files (x86)\Mega-Nerd\libsndfile\lib;C:\Users\bkier\Downloads\portaudio\build\msvc\Win32\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>portaudio_x86.lib;libsndfile-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\Mega-Nerd\libsndfile\lib;C:\Users\bkier\Downloads\portaudio\build\msvc\Win32\Debug;C:\Users\bkier\OneDrive\Documents\cpp_libs\oscpack\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>portaudio_x86.lib;libsndfile-1.lib;oscpack.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -69,11 +69,16 @@ protected:
 	int index = 0;
 	std::vector<Grain*>* grains = new std::vector<Grain*>();
 
+	bool oscCtrl = false;
+	float* storedParams;
+	
+
 public:
 	GranularSynth() = default;
 	GranularSynth(waveTable* sourceWave, int start, int finish, int density, waveTable* window);
 	void UpdateParams(int start, int finish, int density);
 	float GetSample() override;
+	void AddExtCtrl(float* storedParams);
 
 };
 
@@ -83,6 +88,7 @@ private:
 	BaseSound* startPlayer;
 	BaseSound* lengthPlayer;
 	BaseSound* densityPlayer;
+	
 
 public:
 	MovingGranularSynth(waveTable* sourceWave, BaseSound* startPlayer, BaseSound* lengthPlayer, BaseSound* densityPlayer, waveTable* window);
