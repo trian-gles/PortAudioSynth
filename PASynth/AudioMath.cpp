@@ -2,6 +2,7 @@
 #include <cmath>
 #include <vector>
 #include "AudioMath.h"
+#include "prob.h"
 #include <iostream>
 #define SAMPLE_RATE   (48000)
 #define PI 3.14159265f
@@ -211,7 +212,6 @@ float GranularSynth::GetSample()
 			
 		}
 
-		//std::cout << "Need to start a grain" << std::endl;
 		index = 0;
 		bool foundNotPlayingGrain = false;
 		for (size_t i = 0; i < grains->size(); i++)
@@ -219,17 +219,13 @@ float GranularSynth::GetSample()
 			if (!(*grains)[i]->IsPlaying())
 			{
 				(*grains)[i]->Play();
-				(*grains)[i]->UpdateParams(start, finish); // will this unnecessary call slow me down?
+				(*grains)[i]->UpdateParams(start, finish);
 				foundNotPlayingGrain = true;
-				//std::cout << "Starting up stopped grain" << std::endl;
 				break;
 			}
 		}
 		if (!foundNotPlayingGrain)
 		{
-			//std::cout << "Making new grain" << std::endl;
-			
-
 			Grain* newGrain = new Grain(sourceWave, start, finish, this->window); // can I do this mid audio loop?
 			grains->push_back(newGrain);
 			newGrain->Play();

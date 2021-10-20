@@ -65,7 +65,7 @@ protected:
 	waveTable* window;
 	int start;
 	int finish;
-	int density;
+	int density; // Density here controls the number of samples to wait before starting a new grain
 	int index = 0;
 	std::vector<Grain*>* grains = new std::vector<Grain*>();
 
@@ -92,6 +92,24 @@ private:
 
 public:
 	MovingGranularSynth(waveTable* sourceWave, BaseSound* startPlayer, BaseSound* lengthPlayer, BaseSound* densityPlayer, waveTable* window);
+	float GetSample() override;
+};
+
+class SRand //uses Dr. Mara Helmuth's prob.c
+{
+private:
+	double low, mid, high, tight;
+
+public:
+	SRand(double low, double mid, double high, double tight);
+	double GetVal();
+};
+
+class SGranSynth : public GranularSynth
+{
+
+public:
+	SGranSynth(waveTable* sourceWave, int start, int finish, int density, waveTable* window, SRand* randOffset);
 	float GetSample() override;
 };
 
