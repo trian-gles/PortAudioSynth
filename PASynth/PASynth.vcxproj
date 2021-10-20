@@ -28,6 +28,7 @@
     <ClCompile Include="osc\OscPrintReceivedElements.cpp" />
     <ClCompile Include="osc\OscReceivedElements.cpp" />
     <ClCompile Include="osc\OscTypes.cpp" />
+    <ClCompile Include="prob.cpp" />
     <ClCompile Include="WavFile.cpp" />
     <ClCompile Include="osc.cpp" />
   </ItemGroup>
@@ -46,6 +47,7 @@
     <ClInclude Include="osc\OscPrintReceivedElements.h" />
     <ClInclude Include="osc\OscReceivedElements.h" />
     <ClInclude Include="osc\OscTypes.h" />
+    <ClInclude Include="prob.h" />
     <ClInclude Include="WavFile.h" />
     <ClInclude Include="osc.h" />
   </ItemGroup>

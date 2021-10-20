@@ -124,37 +124,18 @@ int main(void)
 	waveTable* hann = MakeHannTable(5000);
 
 
-	waveTable* startTab = MakeLineTable(850000, 1400000, 29100);
-	waveTable* lengthTab = MakeNoiseTable(99000);
-	MulTable(lengthTab, 2500);
-	AddTable(lengthTab, 0);
-	
-
-	waveTable* densityTab = MakeLineTable(3000, 210, 70000);
-
-
-	WavePlayer* startPl = new WavePlayer(startTab);
-	WavePlayer* lengthPl = new WavePlayer(lengthTab);
-	Sig* densSig = new Sig(3000);
-	WavePlayer* densPl = new WavePlayer(densityTab);
-
-	//MovingGranularSynth *granSynth = new MovingGranularSynth(waveform, (BaseSound*)startPl, (BaseSound*)lengthPl, (BaseSound*)densSig, hann);
 	PaError err;
-	/*std::vector<Sine*>* synths = new std::vector<Sine*>();
-	Sine* freq = new Sine(70, 100, 3, 490.0f);
-	PrintSamples(freq, 100);
-	Sine* dua = new Sine(freq, 0.2f, 2000, 0);*/
+	//ExamplePacketListener listener;
+	//UdpListeningReceiveSocket s(
+	//	IpEndpointName(IpEndpointName::ANY_ADDRESS, PORT),
+	//	&listener);
+	//std::thread osc(ListenerThread, &s);
 
-	//Noise *whiteNoise = new Noise();
-	//SimpleFir* fir = new SimpleFir((BaseSound*)whiteNoise, 4, new std::vector<float>{ 0.1, 0.3, 0.4, 0.1, 0.1 });
-	ExamplePacketListener listener;
-	UdpListeningReceiveSocket s(
-		IpEndpointName(IpEndpointName::ANY_ADDRESS, PORT),
-		&listener);
-	std::thread osc(ListenerThread, &s);
+	SRand* granRand = new SRand(0, 1015, 1996, .2);
 
-	GranularSynth* granSynth = new GranularSynth(waveform, 120000, 150500, 900, hann);
-	granSynth->AddExtCtrl(listener.storedMessage);
+	printf("%f", granRand->GetVal());
+
+	SGranSynth* granSynth = new SGranSynth(waveform, 120000, 150500, 900, hann, granRand);
 
 	WavePlayer* wf = new WavePlayer(waveform);
 	PaWrapper* pa = new PaWrapper((BaseSound*)granSynth);

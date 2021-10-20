@@ -26,8 +26,7 @@ float rrand()
 }
 
 
-double prob(low, mid, high, tight)
-double low, mid, high, tight;      /* Returns a value within a range
+double prob(double low, double mid, double high, double tight)     /* Returns a value within a range
                                     close to a preferred value
 
                                     tightness: 0 max away from mid

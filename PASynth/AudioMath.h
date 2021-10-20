@@ -71,6 +71,9 @@ protected:
 
 	bool oscCtrl = false;
 	float* storedParams;
+
+	virtual void NewGrain();
+	virtual void RestartGrain(Grain* grain);
 	
 
 public:
@@ -99,6 +102,7 @@ class SRand //uses Dr. Mara Helmuth's prob.c
 {
 private:
 	double low, mid, high, tight;
+	int seed = 1;
 
 public:
 	SRand(double low, double mid, double high, double tight);
@@ -107,10 +111,16 @@ public:
 
 class SGranSynth : public GranularSynth
 {
+private:
+	SRand* randOffset;
+
+protected:
+	void NewGrain() override;
+	void RestartGrain(Grain* grain) override;
 
 public:
 	SGranSynth(waveTable* sourceWave, int start, int finish, int density, waveTable* window, SRand* randOffset);
-	float GetSample() override;
+	
 };
 
 

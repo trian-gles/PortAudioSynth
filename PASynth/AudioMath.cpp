@@ -194,6 +194,20 @@ GranularSynth::GranularSynth(std::vector<float>* sourceWave, int start, int fini
 	grains->push_back(new Grain(sourceWave, start, finish, window));
 }
 
+void GranularSynth::NewGrain()
+{
+	Grain* newGrain = new Grain(sourceWave, start, finish, this->window); // can I do this mid audio loop?
+	grains->push_back(newGrain);
+	newGrain->Play();
+}
+
+void GranularSynth::RestartGrain(Grain* grain)
+{
+	grain->UpdateParams(start, finish);
+	grain->Play();
+
+}
+
 float GranularSynth::GetSample() 
 {
 	if (index >= density)
@@ -218,30 +232,31 @@ float GranularSynth::GetSample()
 		{
 			if (!(*grains)[i]->IsPlaying())
 			{
-				(*grains)[i]->Play();
-				(*grains)[i]->UpdateParams(start, finish);
+				RestartGrain((*grains)[i]);
 				foundNotPlayingGrain = true;
 				break;
 			}
 		}
 		if (!foundNotPlayingGrain)
 		{
-			Grain* newGrain = new Grain(sourceWave, start, finish, this->window); // can I do this mid audio loop?
-			grains->push_back(newGrain);
-			newGrain->Play();
+			NewGrain();
 		}
 	}
 
 	float fullOutput = 0;
+	int total_grains = 0;
 
 	for (size_t i = 0; i < grains->size(); i++) 
 	{
 		if ((*grains)[i]->IsPlaying())
 		{
 			fullOutput += (*grains)[i]->GetSample();
+			total_grains++;
 		}
-		// should I clean up unneeded grains here?
+		
+		// unneeded grains could possibly be cleaned up here
 	}
+	fullOutput /= total_grains;
 
 	index++;
 	return fullOutput;
@@ -293,6 +308,47 @@ float MovingGranularSynth::GetSample()
 }
 
 
+SRand::SRand(double low, double mid, double high, double tight)
+{
+	this->low = low;
+	this->mid = mid;
+	this->high = high;
+	this->tight = tight;
+}
+
+double SRand::GetVal()
+{
+	seed++;
+	srrand(seed);
+	return prob(this->low, this->mid, this->high, this->tight);
+}
+
+SGranSynth::SGranSynth(waveTable* sourceWave, int start, int finish, int density, waveTable* window, SRand* randOffset)
+{
+	this->sourceWave = sourceWave;
+	this->start = start;
+	this->finish = finish;
+	this->density = density;
+	this->window = window;
+	this->randOffset = randOffset;
+}
+
+void SGranSynth::NewGrain()
+{
+	int offset = (int)round(randOffset->GetVal());
+	Grain* newGrain = new Grain(sourceWave, start + offset, finish + offset, this->window); // can I do this mid audio loop?
+	grains->push_back(newGrain);
+	newGrain->Play();
+	
+}
+
+void SGranSynth::RestartGrain(Grain* grain)
+{
+	int offset = (int)round(randOffset->GetVal());
+	grain->UpdateParams(start + offset, finish + offset);
+	grain->Play();
+
+}
 
 
 

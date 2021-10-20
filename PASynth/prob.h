@@ -12,5 +12,4 @@ void srrand(unsigned int x);
 
 float rrand();
 
-double prob(low, mid, high, tight)
-double low, mid, high, tight;
+double prob(double low, double mid, double high, double tight);
