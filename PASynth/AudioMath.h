@@ -46,14 +46,16 @@ private:
 	int finish;
 	int index; // index for the soundfile
 	int length;
+	int delay;
 	bool playing;
 
 public:
-	Grain(waveTable* sourceWave, int start, int finish, waveTable* window);
+	Grain(waveTable* sourceWave, int start, int finish, int delay, waveTable* window);
 	float GetSample() override;
 	bool IsPlaying();
-	void UpdateParams(int newStart, int newFinish);
+	void UpdateParams(int newStart, int newFinish, int delay);
 	void Play();
+	bool CheckDelay();
 
 };
 
@@ -112,14 +114,15 @@ public:
 class SGranSynth : public GranularSynth
 {
 private:
-	SRand* randOffset;
+	SRand* randStart;
+	SRand* randDelay;
 
 protected:
 	void NewGrain() override;
 	void RestartGrain(Grain* grain) override;
 
 public:
-	SGranSynth(waveTable* sourceWave, int start, int finish, int density, waveTable* window, SRand* randOffset);
+	SGranSynth(waveTable* sourceWave, int start, int finish, int density, waveTable* window, SRand* randStart, SRand* randDelay);
 	
 };
 

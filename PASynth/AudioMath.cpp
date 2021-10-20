@@ -125,7 +125,7 @@ float WavePlayer::GetSample()
 GRANULAR SYNTHESIS
 */
 
-Grain::Grain(std::vector<float>* sourceWave, int start, int finish, waveTable* window)
+Grain::Grain(std::vector<float>* sourceWave, int start, int finish, int delay, waveTable* window)
 {
 	this->start = start;
 	this->finish = finish;
@@ -133,6 +133,7 @@ Grain::Grain(std::vector<float>* sourceWave, int start, int finish, waveTable* w
 	this->index = start;
 	this->sourceWave = sourceWave;
 	this->window = window;
+	this->delay = delay;
 	playing = true;
 }
 
@@ -166,12 +167,13 @@ float Grain::GetSample()
 	return returnGrain;
 }
 
-void Grain::UpdateParams(int newStart, int newFinish)
+void Grain::UpdateParams(int newStart, int newFinish, int delay)
 {
 	start = newStart;
 	index = start;
 	finish = newFinish;
 	length = newFinish - newStart;
+	this->delay = delay;
 }
 
 bool Grain::IsPlaying()
@@ -184,6 +186,16 @@ void Grain::Play()
 	playing = true;
 }
 
+bool Grain::CheckDelay()
+{
+	int temp = this->delay;
+	if (delay > 0)
+	{
+		delay--;
+	}
+	return (temp > 0);
+}
+
 GranularSynth::GranularSynth(std::vector<float>* sourceWave, int start, int finish, int density, waveTable* window)
 {
 	this->sourceWave = sourceWave;
@@ -191,19 +203,19 @@ GranularSynth::GranularSynth(std::vector<float>* sourceWave, int start, int fini
 	this->start = start;
 	this->finish = finish;
 	this->density = density;
-	grains->push_back(new Grain(sourceWave, start, finish, window));
+	grains->push_back(new Grain(sourceWave, start, finish, 0, window));
 }
 
 void GranularSynth::NewGrain()
 {
-	Grain* newGrain = new Grain(sourceWave, start, finish, this->window); // can I do this mid audio loop?
+	Grain* newGrain = new Grain(sourceWave, start, finish, 0, this->window); // can I do this mid audio loop?
 	grains->push_back(newGrain);
 	newGrain->Play();
 }
 
 void GranularSynth::RestartGrain(Grain* grain)
 {
-	grain->UpdateParams(start, finish);
+	grain->UpdateParams(start, finish, 0);
 	grain->Play();
 
 }
@@ -230,9 +242,10 @@ float GranularSynth::GetSample()
 		bool foundNotPlayingGrain = false;
 		for (size_t i = 0; i < grains->size(); i++)
 		{
-			if (!(*grains)[i]->IsPlaying())
+			Grain* g = (*grains)[i];
+			if (!g->IsPlaying())
 			{
-				RestartGrain((*grains)[i]);
+				RestartGrain(g);
 				foundNotPlayingGrain = true;
 				break;
 			}
@@ -248,9 +261,10 @@ float GranularSynth::GetSample()
 
 	for (size_t i = 0; i < grains->size(); i++) 
 	{
-		if ((*grains)[i]->IsPlaying())
+		Grain* g = (*grains)[i];
+		if (g->IsPlaying() && !(g->CheckDelay()))
 		{
-			fullOutput += (*grains)[i]->GetSample();
+			fullOutput += g->GetSample();
 			total_grains++;
 		}
 		
@@ -292,7 +306,7 @@ MovingGranularSynth::MovingGranularSynth(waveTable* sourceWave, BaseSound* start
 	}
 
 	this->density = (int)densityPlayer->GetSample();
-	grains->push_back(new Grain(sourceWave, start, finish, window));
+	grains->push_back(new Grain(sourceWave, start, finish, 0, window));
 }
 
 float MovingGranularSynth::GetSample()
@@ -323,20 +337,22 @@ double SRand::GetVal()
 	return prob(this->low, this->mid, this->high, this->tight);
 }
 
-SGranSynth::SGranSynth(waveTable* sourceWave, int start, int finish, int density, waveTable* window, SRand* randOffset)
+SGranSynth::SGranSynth(waveTable* sourceWave, int start, int finish, int density, waveTable* window, SRand* randStart, SRand* randDelay)
 {
 	this->sourceWave = sourceWave;
 	this->start = start;
 	this->finish = finish;
 	this->density = density;
 	this->window = window;
-	this->randOffset = randOffset;
+	this->randStart = randStart;
+	this->randDelay = randDelay;
 }
 
 void SGranSynth::NewGrain()
 {
-	int offset = (int)round(randOffset->GetVal());
-	Grain* newGrain = new Grain(sourceWave, start + offset, finish + offset, this->window); // can I do this mid audio loop?
+	int offset = (int)round(randStart->GetVal());
+	int delay = (int)round(randDelay->GetVal());
+	Grain* newGrain = new Grain(sourceWave, start + offset, finish + offset, delay, this->window); // can I do this mid audio loop?
 	grains->push_back(newGrain);
 	newGrain->Play();
 	
@@ -344,8 +360,9 @@ void SGranSynth::NewGrain()
 
 void SGranSynth::RestartGrain(Grain* grain)
 {
-	int offset = (int)round(randOffset->GetVal());
-	grain->UpdateParams(start + offset, finish + offset);
+	int offset = (int)round(randStart->GetVal());
+	int delay = (int)round(randDelay->GetVal());
+	grain->UpdateParams(start + offset, finish + offset, delay);
 	grain->Play();
 
 }

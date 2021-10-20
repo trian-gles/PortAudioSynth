@@ -131,11 +131,10 @@ int main(void)
 	//	&listener);
 	//std::thread osc(ListenerThread, &s);
 
-	SRand* granRand = new SRand(0, 1015, 1996, .2);
+	SRand* startRand = new SRand(0, 1015, 1996, .2);
+	SRand* delayRand = new SRand(0, 200, 500, 0.5);
 
-	printf("%f", granRand->GetVal());
-
-	SGranSynth* granSynth = new SGranSynth(waveform, 120000, 150500, 900, hann, granRand);
+	SGranSynth* granSynth = new SGranSynth(waveform, 120000, 150500, 900, hann, startRand, delayRand);
 
 	WavePlayer* wf = new WavePlayer(waveform);
 	PaWrapper* pa = new PaWrapper((BaseSound*)granSynth);
