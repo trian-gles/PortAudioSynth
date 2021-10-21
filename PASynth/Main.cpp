@@ -30,6 +30,10 @@ private:
 		for (i = 0; i < framesPerBuffer; i++)
 		{
 			float samp = outputSound->GetSample();
+			if ((samp > 1) || (samp < -1))
+			{
+				printf("Clipping : %f\n", samp);
+			}
 			*out++ = samp;
 			*out++ = samp;
 		}
@@ -65,7 +69,7 @@ public:
 	PaError OpenStream()
 	{
 		std::cout << "opening stream\n";
-		return Pa_OpenDefaultStream(&stream, 0, 2, paFloat32, SAMPLE_RATE, 256, &PaWrapper::paCallback, this);
+		return Pa_OpenDefaultStream(&stream, 0, 2, paFloat32, SAMPLE_RATE, 32, &PaWrapper::paCallback, this);
 	}
 
 	PaError RunStream()
@@ -121,7 +125,6 @@ int main(void)
 	std::string filename = "C:/Users/bkier/source/repos/PASynth/demo.wav";
 
 	std::vector<float>* waveform = GetWaveform(filename);
-	waveTable* hann = MakeHannTable(5000);
 
 
 	PaError err;
@@ -133,8 +136,9 @@ int main(void)
 
 	SRand* startRand = new SRand(0, 1015, 1996, .2);
 	SRand* delayRand = new SRand(0, 200, 500, 0.5);
+	SRand* rateRand = new SRand(-0.01, 0, 0.1, 2);
 
-	SGranSynth* granSynth = new SGranSynth(waveform, 120000, 150500, 900, hann, startRand, delayRand);
+	SGranSynth* granSynth = new SGranSynth(waveform, 120000, 127000, 1, 50, GranularSynth::windowType::hann, startRand, delayRand, rateRand);
 
 	WavePlayer* wf = new WavePlayer(waveform);
 	PaWrapper* pa = new PaWrapper((BaseSound*)granSynth);

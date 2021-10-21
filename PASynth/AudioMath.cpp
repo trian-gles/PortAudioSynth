@@ -125,7 +125,7 @@ float WavePlayer::GetSample()
 GRANULAR SYNTHESIS
 */
 
-Grain::Grain(std::vector<float>* sourceWave, int start, int finish, int delay, waveTable* window)
+Grain::Grain(std::vector<float>* sourceWave, int start, int finish, float rate, int delay, waveTable* window)
 {
 	this->start = start;
 	this->finish = finish;
@@ -134,32 +134,33 @@ Grain::Grain(std::vector<float>* sourceWave, int start, int finish, int delay, w
 	this->sourceWave = sourceWave;
 	this->window = window;
 	this->delay = delay;
+	this->rate = rate;
 	playing = true;
 }
 
 float Grain::GetSample() 
 {
-	float returnGrain = (*sourceWave)[index];
+	int intIndex = (int)floor(index);
+
+	float returnGrain = (*sourceWave)[intIndex];
+	
 	this->finish;
-	int absIndex = index - start;
- 	int windowIndex = (int)round(absIndex * window->size() / length);
-	float windowSamp = (*window)[windowIndex];
+	int absIndex = intIndex - start;
+	float windowSamp = (*window)[absIndex];
 	returnGrain *= windowSamp;
 	if (finish > start)
 	{
-		index++;
-		if (index >= finish)
+		index += rate;
+		if (index >= (float)finish)
 		{
-			index = start;
 			playing = false;
 		}
 	}
 	else if (start > finish)
 	{
-		index--;
-		if (index <= finish)
+		index -= rate;
+		if (index <= (float)finish)
 		{
-			index = start;
 			playing = false;
 		}
 	}
@@ -167,13 +168,14 @@ float Grain::GetSample()
 	return returnGrain;
 }
 
-void Grain::UpdateParams(int newStart, int newFinish, int delay)
+void Grain::UpdateParams(int start, int finish, float rate, int delay)
 {
-	start = newStart;
+	this->start = start;
 	index = start;
-	finish = newFinish;
-	length = newFinish - newStart;
+	this->finish = finish;
+	length = finish - start;
 	this->delay = delay;
+	this->rate = rate;
 }
 
 bool Grain::IsPlaying()
@@ -196,33 +198,34 @@ bool Grain::CheckDelay()
 	return (temp > 0);
 }
 
-GranularSynth::GranularSynth(std::vector<float>* sourceWave, int start, int finish, int density, waveTable* window)
+GranularSynth::GranularSynth(std::vector<float>* sourceWave, int start, int finish, float rate, int wait, windowType wind)
 {
 	this->sourceWave = sourceWave;
-	this->window = window;
+	this->window = MakeHannTable(abs(finish - start)); //enable other windows sometime
 	this->start = start;
 	this->finish = finish;
-	this->density = density;
-	grains->push_back(new Grain(sourceWave, start, finish, 0, window));
+	this->wait = wait;
+	this->rate = rate;
+	grains->push_back(new Grain(sourceWave, start, finish, rate, 0, window));
 }
 
 void GranularSynth::NewGrain()
 {
-	Grain* newGrain = new Grain(sourceWave, start, finish, 0, this->window); // can I do this mid audio loop?
+	Grain* newGrain = new Grain(sourceWave, start, finish, rate, 0, this->window); // can I do this mid audio loop?
 	grains->push_back(newGrain);
 	newGrain->Play();
 }
 
 void GranularSynth::RestartGrain(Grain* grain)
 {
-	grain->UpdateParams(start, finish, 0);
+	grain->UpdateParams(start, finish, rate, 0);
 	grain->Play();
 
 }
 
 float GranularSynth::GetSample() 
 {
-	if (index >= density)
+	if (index >= wait)
 	{
 		if (oscCtrl)
 		{
@@ -276,11 +279,11 @@ float GranularSynth::GetSample()
 	return fullOutput;
 }
 
-void GranularSynth::UpdateParams(int newStart, int newFinish, int density)
+void GranularSynth::UpdateParams(int newStart, int newFinish, int wait)
 {
 	start = newStart;
 	finish = newFinish;
-	this->density = density;
+	this->wait = wait;
 }
 
 void GranularSynth::AddExtCtrl(float* storedParams)
@@ -289,10 +292,11 @@ void GranularSynth::AddExtCtrl(float* storedParams)
 	this->storedParams = storedParams;
 }
 
-MovingGranularSynth::MovingGranularSynth(waveTable* sourceWave, BaseSound* startPlayer, BaseSound* lengthPlayer, BaseSound* densityPlayer, waveTable* window)
+MovingGranularSynth::MovingGranularSynth(waveTable* sourceWave, BaseSound* startPlayer, BaseSound* lengthPlayer, 
+	BaseSound* densityPlayer, windowType wind)
 {
 	this->sourceWave = sourceWave;
-	this->window = window;
+	this->window = this->window = MakeHannTable(abs(finish - start));
 	this->startPlayer = startPlayer;
 	this->lengthPlayer = lengthPlayer;
 	this->densityPlayer = densityPlayer;
@@ -305,8 +309,8 @@ MovingGranularSynth::MovingGranularSynth(waveTable* sourceWave, BaseSound* start
 		this->finish++;
 	}
 
-	this->density = (int)densityPlayer->GetSample();
-	grains->push_back(new Grain(sourceWave, start, finish, 0, window));
+	this->wait = (int)densityPlayer->GetSample();
+	grains->push_back(new Grain(sourceWave, start, finish, rate, 0, window));
 }
 
 float MovingGranularSynth::GetSample()
@@ -317,7 +321,7 @@ float MovingGranularSynth::GetSample()
 	{
 		this->finish++;
 	}
-	this->density = (int)densityPlayer->GetSample();
+	this->wait = (int)densityPlayer->GetSample();
 	return GranularSynth::GetSample();
 }
 
@@ -337,22 +341,25 @@ double SRand::GetVal()
 	return prob(this->low, this->mid, this->high, this->tight);
 }
 
-SGranSynth::SGranSynth(waveTable* sourceWave, int start, int finish, int density, waveTable* window, SRand* randStart, SRand* randDelay)
+SGranSynth::SGranSynth(waveTable* sourceWave, int start, int finish, float rate, int wait, 
+	windowType wind, SRand* randStart, SRand* randDelay, SRand* randRate)
 {
 	this->sourceWave = sourceWave;
 	this->start = start;
 	this->finish = finish;
-	this->density = density;
-	this->window = window;
+	this->rate = rate;
+	this->wait = wait;
+	this->window = this->window = MakeHannTable(abs(finish - start));
 	this->randStart = randStart;
 	this->randDelay = randDelay;
+	this->randRate = randRate;
 }
 
 void SGranSynth::NewGrain()
 {
-	int offset = (int)round(randStart->GetVal());
+	int offset = (int)round(randStart->GetVal()); //get rid of this rounding
 	int delay = (int)round(randDelay->GetVal());
-	Grain* newGrain = new Grain(sourceWave, start + offset, finish + offset, delay, this->window); // can I do this mid audio loop?
+	Grain* newGrain = new Grain(sourceWave, start + offset, finish + offset, rate + randRate->GetVal(), delay, this->window); // can I do this mid audio loop?
 	grains->push_back(newGrain);
 	newGrain->Play();
 	
@@ -362,7 +369,7 @@ void SGranSynth::RestartGrain(Grain* grain)
 {
 	int offset = (int)round(randStart->GetVal());
 	int delay = (int)round(randDelay->GetVal());
-	grain->UpdateParams(start + offset, finish + offset, delay);
+	grain->UpdateParams(start + offset, finish + offset, rate + randRate->GetVal(), delay);
 	grain->Play();
 
 }

@@ -44,16 +44,17 @@ private:
 	waveTable* window;
 	int start;
 	int finish;
-	int index; // index for the soundfile
+	float index; // index for the soundfile
 	int length;
+	float rate;
 	int delay;
 	bool playing;
 
 public:
-	Grain(waveTable* sourceWave, int start, int finish, int delay, waveTable* window);
+	Grain(waveTable* sourceWave, int start, int finish, float rate, int delay, waveTable* window);
 	float GetSample() override;
 	bool IsPlaying();
-	void UpdateParams(int newStart, int newFinish, int delay);
+	void UpdateParams(int start, int finish, float rate, int delay);
 	void Play();
 	bool CheckDelay();
 
@@ -67,7 +68,8 @@ protected:
 	waveTable* window;
 	int start;
 	int finish;
-	int density; // Density here controls the number of samples to wait before starting a new grain
+	int wait; // Density here controls the number of samples to wait before starting a new grain
+	float rate; // For pitch alteration
 	int index = 0;
 	std::vector<Grain*>* grains = new std::vector<Grain*>();
 
@@ -79,9 +81,10 @@ protected:
 	
 
 public:
+	static enum windowType { hann, somethingElse };
 	GranularSynth() = default;
-	GranularSynth(waveTable* sourceWave, int start, int finish, int density, waveTable* window);
-	void UpdateParams(int start, int finish, int density);
+	GranularSynth(waveTable* sourceWave, int start, int finish, float rate, int wait, windowType wind);
+	void UpdateParams(int start, int finish, int wait);
 	float GetSample() override;
 	void AddExtCtrl(float* storedParams);
 
@@ -96,7 +99,7 @@ private:
 	
 
 public:
-	MovingGranularSynth(waveTable* sourceWave, BaseSound* startPlayer, BaseSound* lengthPlayer, BaseSound* densityPlayer, waveTable* window);
+	MovingGranularSynth(waveTable* sourceWave, BaseSound* startPlayer, BaseSound* lengthPlayer, BaseSound* densityPlayer, windowType wind);
 	float GetSample() override;
 };
 
@@ -116,14 +119,14 @@ class SGranSynth : public GranularSynth
 private:
 	SRand* randStart;
 	SRand* randDelay;
+	SRand* randRate;
 
 protected:
 	void NewGrain() override;
 	void RestartGrain(Grain* grain) override;
 
 public:
-	SGranSynth(waveTable* sourceWave, int start, int finish, int density, waveTable* window, SRand* randStart, SRand* randDelay);
-	
+	SGranSynth(waveTable* sourceWave, int start, int finish, float rate, int wait, windowType wind, SRand* randStart, SRand* randDelay, SRand* randRate);
 };
 
 
